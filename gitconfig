@@ -1,61 +1,92 @@
-[color]
-  branch = auto
-  diff = auto
-  interactive = auto
-  status = auto
-  ui = auto
-
-[color "branch"]
-  current = green
-  remote = yellow
-
-[core]
-  pager = less -FRSX
-  editor = code --wait
-
-[alias]
-  co = checkout
-  st = status -sb
-  br = branch
-  ci = commit
-  fo = fetch origin
-  d = !git --no-pager diff
-  dt  = difftool
-  stat = !git --no-pager diff --stat
-
-  # Set remotes/origin/HEAD -> defaultBranch (copied from https://stackoverflow.com/a/67672350/14870317)
-  remoteSetHead = remote set-head origin --auto
-
-  # Get default branch name (copied from https://stackoverflow.com/a/67672350/14870317)
-  defaultBranch = !git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4
-
-  # Clean merged branches (adapted from https://stackoverflow.com/a/6127884/14870317)
-  sweep = !git branch --merged $(git defaultBranch) | grep -E -v " $(git defaultBranch)$" | xargs -r git branch -d && git remote prune origin
-
-  # http://www.jukie.net/bart/blog/pimping-out-git-log
-  lg = log --graph --all --pretty=format:'%Cred%h%Creset - %s %Cgreen(%cr) %C(bold blue)%an%Creset %C(yellow)%d%Creset'
-
-  # Serve local repo. http://coderwall.com/p/eybtga
-  # Then other can access via `git clone git://#{YOUR_IP_ADDRESS}/
-  serve = !git daemon --reuseaddr --verbose  --base-path=. --export-all ./.git
-
-  # Checkout to defaultBranch
-  m = !git checkout $(git defaultBranch)
-
-  # Removes a file from the index
-  unstage = reset HEAD --
-
-[help]
-  autocorrect = 1
-
+[user]
+	email = jfr.grand@gmail.com
+	name = Jean-Francois Grand
+[http]
+        sslVerify = false
 [push]
-  default = simple
+        default = current
+ 
+[alias]
+    br = branch
+    rb = !git fetch origin master:master && git rebase master
+    di = difftool -d
+    rd = !git ls-files --deleted -z | xargs -0 git rm
+#colored log    
+    lg = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+#reversed colored log
+    lgr = log --color --reverse --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+#checkout
+    co = checkout
+#commit
+    ci = commit
+#commit with Code Review comment
+#usage: git cicr j.doe -m "fix: my awesome fix"
+    cicr = "!f() { if [ $# -lt 3 ] || [[ "$1" == -* ]]; then echo "Missing Code Reviewer name and/or message"; else CR_NAME="$1"; shift; git commit \"$@\" -m \"CR by $CR_NAME\"; echo; echo "Code Reviewer: $CR_NAME"; fi; }; f"
+#status
+    st = status
+#merge --no-ff
+    mf = merge --no-ff
+#git reset soft
+    undo = reset --soft HEAD^
+#diff
+    changes = diff --name-status
+#diff
+    dic = diff --cached
+#diff
+    diffstat = diff --stat
+#wdiff
+    wdiff = diff --word-diff
+#add all file to commit
+    adda = add -A
+#ignore file
+    ignore = update-index --assume-unchanged
+#unignore file
+    unignore = update-index --no-assume-unchanged
+#show ignored files
+    ignored = !git ls-files -v | grep "^[[:lower:]]"
+#tag local creation
+#usage: git tagn 1.2.3
+    tagn = "!f() { if [ "$1" != \"\" ]; then git tag -a v$1 -m \"Version $1\"; echo \"Created tag v$1\"; fi; }; f"
+#tag local delete
+    tagd = "!f() { if [ "$1" != \"\" ]; then git tag -d v$1; fi; }; f"
+#tag remote delete
+    tagdr = "!f() { if [ "$1" != \"\" ]; then git tagd $1; git push --delete origin v$1; fi; }; f"
+#tag remote delete + local creation
+#usage: git tagr 1.2.3
+    tagr = "!f() { if [ "$1" != \"\" ]; then git tagdr $1; git tagn $1; fi; }; f"
+# Find commits by source code
+    fc = "!f() { git log --pretty=format:'%C(yellow)%h  %Cblue%ad  %Creset%s%Cgreen  [%cn] %Cred%d' --decorate --date=short -S$1; }; f"
+# common
+    common = "!f() { git merge-base origin/$1 origin/$2 | xargs git checkout; }; f"
+# commit amend no edit
+    cia = commit --amend --no-edit
+#  deleted merged branches
+    dm = !git branch --merged | grep -v '\\*' | grep -v 'master' | xargs -n 1 git branch -d
+[pretty]
+        lg = format:%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset
+ 
+[rerere]
+        enabled = true
+ 
+[rebase]
+        autostash = true
+  
+[mergetool]
+        keepBackup = false
+  
+[fetch]
+        prune = true
+ 
+[diff]
+        tool = meld
+  
+[merge]
+        tool = meld
+[core]
+	editor = code
+	excludesfile = /home/gritchou/.gitignore
+	fileMode = false
 
-[branch "master"]
-  mergeoptions = --no-edit
-
-[pull]
-  rebase = false
-
-[init]
-  defaultBranch = master
+[credential "https://github.com"]
+	username = gritchou
+	helper = cache --timeout=2628000
